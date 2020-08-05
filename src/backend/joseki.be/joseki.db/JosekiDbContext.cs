@@ -77,6 +77,11 @@ namespace joseki.db
         /// </summary>
         public DbSet<OwnershipEntity> Ownership { get; set; }
 
+        /// <summary>
+        /// Holds the component-user-role relations.
+        /// </summary>
+        public DbSet<ComponentUserRoleRelation> ComponentUserRoleRelations { get; set; }
+
         /// <inheritdoc />
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -219,6 +224,12 @@ namespace joseki.db
             #region Ownership
 
             modelBuilder.Entity<OwnershipEntity>().HasKey(ownership => ownership.Id);
+
+            #endregion
+
+            #region UserComponentRoleRelation
+
+            modelBuilder.Entity<ComponentUserRoleRelation>().HasKey(userRoleRelation => userRoleRelation.Id);
 
             #endregion
         }

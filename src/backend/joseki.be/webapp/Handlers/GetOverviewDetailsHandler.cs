@@ -42,15 +42,16 @@ namespace webapp.Handlers
         /// <param name="date">The date to get details for.</param>
         /// <param name="pageSize">Size of each result set.</param>
         /// <param name="pageIndex">Index of each result set.</param>
+        /// <param name="allowedComponentIds">List of accessible component Ids for the current user, if null no filtering will be applied.</param>
         /// <returns>list of CheckResultSet.</returns>
-        public async Task<CheckResultSet> GetDetails(string sortBy, string filterBy, DateTime date, int pageSize, int pageIndex)
+        public async Task<CheckResultSet> GetDetails(string sortBy, string filterBy, DateTime date, int pageSize, int pageIndex, List<string> allowedComponentIds = null)
         {
             var checks = await this.GetChecks(date);
 
             var result = new CheckResultSet();
             try
             {
-                checks = FilterCheckList(checks, filterBy);
+                checks = FilterCheckList(checks, filterBy, allowedComponentIds);
 
                 result.PageIndex = pageIndex;
                 result.PageSize = pageSize;
@@ -78,14 +79,15 @@ namespace webapp.Handlers
         /// <param name="filterBy">The filtering parameters as a string, concated by ,.</param>
         /// <param name="date">The date to get details for.</param>
         /// <param name="omitEmpty">Filter out the checks with no result in their segment.</param>
+        /// <param name="allowedComponentIds">List of accessible component Ids for the current user, if null no filtering will be applied.</param>
         /// <returns>string array.</returns>
-        public async Task<Dictionary<string, CheckFilter[]>> GetAutoCompleteData(string filterBy, DateTime date, bool omitEmpty = false)
+        public async Task<Dictionary<string, CheckFilter[]>> GetAutoCompleteData(string filterBy, DateTime date, bool omitEmpty = false, List<string> allowedComponentIds = null)
         {
             // get all scan results
             var allChecks = await this.GetChecks(date);
 
             // get filtered scan results
-            var filteredChecks = FilterCheckList(allChecks, filterBy);
+            var filteredChecks = FilterCheckList(allChecks, filterBy, allowedComponentIds);
 
             // construct the result set using both [all/filtered] scan results.
             var results = new Dictionary<string, CheckFilter[]>();
@@ -255,7 +257,7 @@ namespace webapp.Handlers
             return checks;
         }
 
-        private static List<OverviewCheck> FilterCheckList(List<OverviewCheck> list, string filterBy)
+        private static List<OverviewCheck> FilterCheckList(List<OverviewCheck> list, string filterBy, List<string> filterComponentIds = null)
         {
             if (string.IsNullOrEmpty(filterBy) || filterBy == "*")
             {
@@ -329,6 +331,11 @@ namespace webapp.Handlers
                         checks = checks.Where(resourcePredicate.Compile());
                         break;
                 }
+            }
+
+            if (filterComponentIds != null)
+            {
+                return checks.Where(x => filterComponentIds.Contains(x.Component.Id)).ToList();
             }
 
             return checks.ToList();
